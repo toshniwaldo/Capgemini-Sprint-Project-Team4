@@ -29,28 +29,25 @@ public class ProductLinesControllerTest {
 
     @Test
     void testGetAllProductLines() throws Exception {
-        List<ProductLine> list = repository.findAll();
-        assert(list.size() >= 0);
-
-        mockMvc.perform(get("/productlines/getAll"))
+        mockMvc.perform(get("/productlines"))
                 .andExpect(status().isOk())
-                .andExpect(content().contentType(MediaType.APPLICATION_JSON))
-                .andExpect(jsonPath("$.length()", greaterThan(0)));
+                .andExpect(content().contentType("application/vnd.hal+json"))
+                .andExpect(jsonPath("$._embedded.productLines.length()", greaterThan(0)));
     }
 
     @Test
     void testCreateProductLine() throws Exception {
         String json = """
-                {
-                    "productLine": "Classic Cars",
-                    "textDescription": "desc"
-                }
-                """;
+            {
+                "productLine": "Classic Cars",
+                "textDescription": "desc"
+            }
+            """;
 
-        mockMvc.perform(post("/productlines/create")
+        mockMvc.perform(post("/productlines")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isOk())
-                .andExpect(jsonPath("$.productLine").value("Classic Cars"));
+                .andExpect(status().isCreated())
+                .andExpect(header().exists("Location"));
     }
 }
