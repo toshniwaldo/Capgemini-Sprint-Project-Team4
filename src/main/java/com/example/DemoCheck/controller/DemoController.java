@@ -9,5 +9,9 @@ public class DemoController {
     @GetMapping("/api")
     public String getResponse(){
         return "Hello from Demo controller";
+
     }
 }
+
+
+
