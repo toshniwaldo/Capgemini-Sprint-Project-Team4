@@ -63,7 +63,11 @@ class OfficeRestApiTest {
 
         mockMvc.perform(get("/offices"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$._embedded.offices.length()", greaterThan(0)));
+                .andExpect(jsonPath("$._embedded.offices.length()").isNotEmpty())
+
+                .andExpect(jsonPath("$._embedded.offices[0].city").exists())
+                .andExpect(jsonPath("$._embedded.offices[0].phone").exists())
+                .andExpect(jsonPath("$._embedded.offices[0].country").exists());
     }
 
     @Test

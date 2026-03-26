@@ -1,8 +1,11 @@
 package com.example.DemoCheck.entity;
 
+import java.util.List;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.Data;
 
@@ -26,6 +29,9 @@ public class Product {
     @Column(name = "productScale")
     private String productScale;
 
+    @Column(name = "productDescription")
+    private String productDescription;
+
     @Column(name = "quantityInStock")
     private int quantityInStock;
 
@@ -34,4 +40,7 @@ public class Product {
 
     @Column(name = "MSRP")
     private double MSRP;
+
+    @OneToMany(mappedBy = "product")
+    private List<OrderDetails> orderDetails;
 }
