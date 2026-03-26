@@ -39,3 +39,9 @@ jobs:
         run: mvn clean install
         env:
           SPRING_PROFILES_ACTIVE: test
+
+      - name: Upload JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-jar
+          path: target/DemoCheck-0.0.1-SNAPSHOT.jar
