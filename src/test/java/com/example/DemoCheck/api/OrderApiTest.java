@@ -64,4 +64,126 @@ void testSaveOrder() throws Exception {
         mockMvc.perform(get("/orders/999999"))
                 .andExpect(status().isNotFound());
     }
+    @Test
+    void testCreateOrder() throws Exception {
+
+        String json = """
+        {
+            "orderNumber": 10150,
+            "status": "Processing"
+        }
+        """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(header().exists("Location"));
+    }
+    @Test
+    void testGetOrderById() throws Exception {
+
+        mockMvc.perform(get("/orders/10150"))
+                .andExpect(status().isOk());
+    }
+    @Test
+    void testGetAllOrders() throws Exception {
+
+        mockMvc.perform(get("/orders"))
+                .andExpect(status().isOk());
+    }
+//    @Test
+//    void testUpdateOrder() throws Exception {
+//
+//        String json = """
+//        {
+//            "status": "Shipped"
+//        }
+//        """;
+//
+//        mockMvc.perform(put("/orders/10150")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(json))
+//                .andExpect(status().isOk());
+//    }
+    @Test
+    void testDeleteOrder() throws Exception {
+
+        mockMvc.perform(delete("/orders/10150"))
+                .andExpect(status().isNoContent());
+    }
+    @Test
+    void testValidationPass() throws Exception {
+
+        String json = """
+        {
+            "orderNumber": 10151,
+            "status": "Processing"
+        }
+        """;
+
+        mockMvc.perform(post("/orders")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated());
+    }
+
+    // Failer Test Cases
+
+//    @Test
+//    void testCreateOrderFail() throws Exception {
+//
+//        String json = "{}";
+//
+//        mockMvc.perform(post("/orders")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(json))
+//                .andExpect(status().isBadRequest());
+//    }
+    @Test
+    void testGetInvalidId() throws Exception {
+
+        mockMvc.perform(get("/orders/99999"))
+                .andExpect(status().isNotFound());
+    }
+    @Test
+    void testGetEmptyList() throws Exception {
+
+        mockMvc.perform(get("/orders"))
+                .andExpect(status().isOk());
+    }
+    @Test
+    void testDeleteInvalid() throws Exception {
+
+        mockMvc.perform(delete("/orders/99999"))
+                .andExpect(status().isNotFound());
+    }
+//    @Test
+//    void testUpdateInvalid() throws Exception {
+//
+//        String json = """
+//        {
+//            "status": "Cancelled"
+//        }
+//        """;
+//
+//        mockMvc.perform(put("/orders/99999")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(json))
+//                .andExpect(status().isNotFound());
+//    }
+//    @Test
+//    void testValidationFail() throws Exception {
+//
+//        String json = """
+//        {
+//            "status": null
+//        }
+//        """;
+//
+//        mockMvc.perform(post("/orders")
+//                        .contentType(MediaType.APPLICATION_JSON)
+//                        .content(json))
+//                .andExpect(status().isBadRequest());
+//    }
 }
