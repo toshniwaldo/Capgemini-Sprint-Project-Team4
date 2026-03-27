@@ -3,11 +3,13 @@ package com.example.DemoCheck.api;
 import com.example.DemoCheck.entity.Employee;
 import com.example.DemoCheck.entity.Office;
 import com.example.DemoCheck.repository.EmployeeRepository;
+import com.example.DemoCheck.repository.OfficeRepository;
 import jakarta.transaction.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
+import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
@@ -23,6 +25,9 @@ public class EmployeeApiTest {
 
     @Autowired
     private EmployeeRepository employeeRepository;
+
+    @Autowired
+    private OfficeRepository officeRepository;
 
     // --- HELPER METHOD ---
     // This creates and saves an employee in just one line of code
@@ -41,8 +46,14 @@ public class EmployeeApiTest {
 
     private Office getDefaultOffice() {
         Office office = new Office();
-        office.setOfficeCode("1"); // already exists in DB
-        return office;
+        office.setOfficeCode("1");
+        office.setCity("Nagpur");
+        office.setPhone("1234567890");
+        office.setAddressLine1("IT Park");
+        office.setCountry("India");
+        office.setPostalCode("440022");
+        office.setTerritory("APAC");
+        return officeRepository.save(office);
     }
 
     @Test
@@ -137,5 +148,52 @@ public class EmployeeApiTest {
                         .param("projection", "employeeView"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$._embedded.employees").isEmpty());
+    }
+
+    @Test
+    void testCreateEmployee_Pass() throws Exception {
+        // 1. Setup: Call your helper to ensure Office 1 is safely in the DB
+        getDefaultOffice();
+
+        String validJson = """
+                {
+                    "employeeNumber": 2000,
+                    "firstName": "New",
+                    "lastName": "Employee",
+                    "email": "new.employee@gmail.com",
+                    "jobTitle": "Backend Developer",
+                    "extension": "x111",
+                    "office": "/offices/1" 
+                }
+                """;
+
+        mockMvc.perform(post("/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(validJson))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.firstName").value("New"))
+                .andExpect(jsonPath("$.email").value("new.employee@gmail.com"));
+    }
+
+    @Test
+    void testCreateEmployee_Fail_MissingMandatoryField() throws Exception {
+        // 1. Setup: Call your helper
+        getDefaultOffice();
+
+        String invalidJson = """
+                {
+                    "employeeNumber": 2001,
+                    "firstName": "Broken",
+                    "lastName": "Employee",
+                    "jobTitle": "Backend Developer",
+                    "extension": "x111",
+                    "office": "/offices/1" 
+                }
+                """;
+
+        mockMvc.perform(post("/employees")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(invalidJson))
+                .andExpect(status().isConflict());
     }
 }
