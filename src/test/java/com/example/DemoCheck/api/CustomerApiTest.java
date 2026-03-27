@@ -2,8 +2,10 @@ package com.example.DemoCheck.api;
 
 import com.example.DemoCheck.entity.Customer;
 import com.example.DemoCheck.entity.Employee;
+import com.example.DemoCheck.entity.Office;
 import com.example.DemoCheck.repository.CustomerRepository;
 import com.example.DemoCheck.repository.EmployeeRepository;
+import com.example.DemoCheck.repository.OfficeRepository;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +35,8 @@ class CustomerApiTest {
     @Autowired
     private EmployeeRepository employeeRepository;
 
+    @Autowired
+    private OfficeRepository officeRepository;
     //Helper method
     private Customer createCustomer(int id, String name, String city) {
         Customer c = new Customer();
@@ -54,13 +58,25 @@ class CustomerApiTest {
 
     //helper method
     private Employee createEmployee() {
+
+        Office office = new Office();
+        office.setOfficeCode(String.valueOf(generateId()));
+        office.setCity("Nagpur");
+        office.setPhone("1234567890");
+        office.setAddressLine1("Addr1");
+        office.setCountry("India");
+        office.setPostalCode("440001");
+        office.setTerritory("APAC");
+
+        officeRepository.save(office);
+
         Employee e = new Employee();
         e.setEmployeeNumber(generateId());
         e.setLastName("Doe");
         e.setFirstName("John");
         e.setExtension("x123");
         e.setEmail("john@test.com");
-        e.setOfficeCode("1");
+        e.setOffice(office);
         e.setJobTitle("Manager");
         return employeeRepository.save(e);
     }

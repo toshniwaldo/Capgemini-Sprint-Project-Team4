@@ -1,5 +1,6 @@
 package com.example.DemoCheck.entity;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
 import jakarta.persistence.*;
 import lombok.Data;
 
@@ -28,6 +29,7 @@ public class Employee {
 
     @ManyToOne
     @JoinColumn(name = "officeCode")
+    @JsonBackReference
     private Office office;
 
     @Column(name="reportsTo")

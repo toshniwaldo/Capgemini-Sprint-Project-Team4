@@ -1,10 +1,10 @@
 package com.example.DemoCheck.entity;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import jakarta.persistence.*;
 import lombok.*;
+
+import java.util.List;
 
 @Entity
 @Table(name = "offices")
@@ -44,6 +44,7 @@ public class Office {
     private String territory;
 
     @OneToMany(mappedBy = "office")
+    @JsonManagedReference
     private List<Employee> employees;
 
 }
