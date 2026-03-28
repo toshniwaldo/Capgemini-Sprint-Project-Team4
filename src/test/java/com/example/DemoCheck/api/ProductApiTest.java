@@ -299,6 +299,8 @@ public class ProductApiTest {
 
 
     // ================================================ POST Product tests ================================================
+    
+    // tests Product creation through POST endpoint
     @Test
     void testCraeteProduct_Valid() throws Exception {
         String json = """
@@ -322,6 +324,7 @@ public class ProductApiTest {
             .andExpect(header().exists("Location"));
     }
 
+    // tests Product creation failure due to missing fields in JSON through POST endpoint
     @Test
     void testCreateProduct_MissingField() throws Exception {
         String json = """
@@ -343,6 +346,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to blank fields in JSON through POST endpoint
     @Test
     void testCreateProduct_BlankProductName() throws Exception {
         String json = """
@@ -365,6 +369,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to missing relationship mapping field in JSON through POST endpoint
     @Test
     void testCreateProduct_MissingProductLine() throws Exception {
         String json = """
@@ -386,6 +391,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to non-existing relationship mapping field in JSON through POST endpoint
     @Test
     void testCreateProduct_InvalidProductLine() throws Exception {
         String json = """
@@ -408,6 +414,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to negative value in numeric field in JSON through POST endpoint
     @Test
     void testCreateProduct_NegativeQuantity() throws Exception {
         String json = """
@@ -430,6 +437,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to negative value in numeric field in JSON through POST endpoint
     @Test
     void testCreateProduct_NegativePrice() throws Exception {
         String json = """
@@ -452,6 +460,7 @@ public class ProductApiTest {
             .andExpect(status().isBadRequest());
     }
 
+    // tests Product creation failure due to duplicate product insertion in JSON through POST endpoint
     @Test
     void testCreateProduct_DuplicateProductCode() throws Exception {
         String json = """
@@ -477,6 +486,7 @@ public class ProductApiTest {
     
     // ================================================ PUT/PATCH Product tests ================================================
 
+    // tests Product updation through PUT endpoint
     @Test
     void testUpdateProduct_ValidPut() throws Exception {
         String json = """

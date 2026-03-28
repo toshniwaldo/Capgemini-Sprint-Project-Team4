@@ -3,6 +3,7 @@ package com.example.DemoCheck.repository;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.List;
@@ -33,6 +34,7 @@ public class ProductRepositoryTest {
     @Autowired
     private OrderDetailRepository orderDetailRepository;
 
+    // setup for tests
     @BeforeEach
     void setUp() {
         ProductLine line = new ProductLine();
@@ -68,6 +70,7 @@ public class ProductRepositoryTest {
         productRepository.save(p2);
     }
 
+    // product object creation test
     @Test
     void testSavedProduct() {
         Product saved = productRepository.findById("S10_89876").get();
@@ -82,6 +85,7 @@ public class ProductRepositoryTest {
         assertEquals(65, saved.getMSRP());
     }
 
+    // this tests findAll functionality
     @Test
     void testFindAllProducts() {
         List<Product> productList = productRepository.findAll();
@@ -95,6 +99,7 @@ public class ProductRepositoryTest {
         assertTrue(productList.stream().anyMatch(p -> p.getProductCode().equals("S10_89856")));
     }
 
+    // this tests findALl functionality in case of empty DB
     @Test
     void testFindAllProducts_NoProducts() {
         orderDetailRepository.deleteAll();
@@ -106,7 +111,7 @@ public class ProductRepositoryTest {
         assertTrue(productList.isEmpty());
     }
 
-    // find by valid Id
+    // this tests findBy valid Id 
     @Test
     void testFindById() {
         Optional<Product> result = productRepository.findById("S10_89856");
@@ -115,7 +120,7 @@ public class ProductRepositoryTest {
         assertEquals("Trimax", result.get().getProductName());
     }
 
-    // find by invalid Id
+    // this tests find by invalid Id
     @Test
     void testFindByInvalidId_NoProduct() {
         Optional<Product> result = productRepository.findById("S10_89222");
@@ -123,7 +128,7 @@ public class ProductRepositoryTest {
         assertFalse(result.isPresent());
     }
 
-    // pagination testing
+    // pagination testing -> tests and verifies the pagination functionality
     @Test
     void testFindAll_Pagination() {
         for (int i = 0; i < 20 ; i++) {
@@ -138,15 +143,18 @@ public class ProductRepositoryTest {
             p.setBuyPrice(100.0);
             p.setMSRP(150.0);
             productRepository.save(p);
-        }
+        } // creating records in DB
 
         Page<Product> pages = productRepository.findAll(PageRequest.of(0, 20));
 
+        int totalRecords = (int) pages.getTotalElements();
+        int expectedPages = (int) Math.ceil((double)totalRecords/20);
+
         assertEquals(20, pages.getContent().size());
-        assertEquals(7, pages.getTotalPages()); // 25 / 20 = 2
+        assertEquals(expectedPages, pages.getTotalPages()); // 25 / 20 = 2
     }
 
-    // custom search query testing
+    // custom search query testing with valid name or line
     @Test
     void testSearchByNameOrLine() {
         Page<Product> result = productRepository.findByProductNameContainingIgnoreCaseOrProductLine_ProductLineContainingIgnoreCase(null, "plane", PageRequest.of(0,20));
@@ -154,6 +162,7 @@ public class ProductRepositoryTest {
         assertFalse(result.isEmpty());
     }
 
+    // custom search query testing with invalid name or line
     @Test
     void testSearchByNameOrLine_NoResults() {
         Page<Product> result = productRepository.findByProductNameContainingIgnoreCaseOrProductLine_ProductLineContainingIgnoreCase("H&M", "jacket", PageRequest.of(0,20));
@@ -161,6 +170,7 @@ public class ProductRepositoryTest {
         assertTrue(result.isEmpty());
     }
 
+    // custom search query testing with valid name or line ignoring case sensitivity
     @Test
     void testSearchCaseInsensitivity() {
         Page<Product> result = productRepository.findByProductNameContainingIgnoreCaseOrProductLine_ProductLineContainingIgnoreCase(
@@ -168,6 +178,54 @@ public class ProductRepositoryTest {
         );
 
         assertFalse(result.isEmpty());
+    }
+
+    // this tests the update functionality
+    @Test
+    void testUpdateProduct() {
+        Product existing = productRepository.findById("S10_89876").get();
+        existing.setProductName("Updated Name");
+
+        Product updated = productRepository.save(existing);
+
+        assertEquals("Updated Name", updated.getProductName());
+    }
+
+
+    // updating non-existing entity, JPA internally saves it as new entity
+    @Test
+    void testUpdate_NonExistingProduct_ShouldCreate() {
+        Product p = new Product();
+        p.setProductCode("NEW_123");
+        p.setProductName("New Product");
+        p.setProductLine(productLineRepository.findById("Planes").get());
+
+        Product saved = productRepository.save(p);
+
+        assertNotNull(saved);
+        assertEquals("NEW_123", saved.getProductCode());
+    }
+
+    // constraint validation -> invalid value, violating DB and JPA constraints
+    @Test
+    void testSave_InvalidProduct_ShouldFail() {
+        Product p = new Product();
+        p.setProductCode(null); // invalid
+
+        assertThrows(Exception.class, () -> productRepository.save(p));
+    }
+
+    // constraint validation -> updating a record with an invalid value for a variable
+    @Test
+    void testUpdate_InvalidData_ShouldFail() {
+        Product existing = productRepository.findById("S10_89876").get();
+
+        existing.setProductName(null); // assuming NOT NULL
+
+        assertThrows(Exception.class, () -> {
+            productRepository.save(existing);
+            productRepository.flush();
+        });
     }
 
 }
