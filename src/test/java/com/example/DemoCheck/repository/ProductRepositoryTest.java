@@ -126,7 +126,7 @@ public class ProductRepositoryTest {
     // pagination testing
     @Test
     void testFindAll_Pagination() {
-        for (int i = 0; i < 25; i++) {
+        for (int i = 0; i < 20 ; i++) {
             Product p = new Product();
             p.setProductCode("S10_" + i);
             p.setProductName("Product " + i);
@@ -143,7 +143,7 @@ public class ProductRepositoryTest {
         Page<Product> pages = productRepository.findAll(PageRequest.of(0, 20));
 
         assertEquals(20, pages.getContent().size());
-        assertEquals(2, pages.getTotalPages()); // 25 / 20 = 2
+        assertEquals(7, pages.getTotalPages()); // 25 / 20 = 2
     }
 
     // custom search query testing

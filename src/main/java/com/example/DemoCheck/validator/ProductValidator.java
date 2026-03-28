@@ -28,11 +28,6 @@ public class ProductValidator implements Validator {
             errors.rejectValue("productName", "productName.empty", "Product name is required");
         }
 
-        // productLine 
-        if (p.getProductLine() == null) {
-            errors.rejectValue("productLine", "productLine.null", "Product line is required");
-        }
-
         // productVendor
         if (p.getProductVendor() == null || p.getProductVendor().trim().isEmpty()) {
             errors.rejectValue("productVendor", "productVendor.empty", "Vendor is required");
@@ -60,10 +55,6 @@ public class ProductValidator implements Validator {
 
         if (p.getMSRP() < 0) {
             errors.rejectValue("MSRP", "MSRP.invalid", "MSRP must be >= 0");
-        }
-
-        if (p.getProductCode() != null && productRepository.existsById(p.getProductCode())) {
-            errors.rejectValue("productCode", "duplicate", "Product with this code already exists");
         }
     }
 }

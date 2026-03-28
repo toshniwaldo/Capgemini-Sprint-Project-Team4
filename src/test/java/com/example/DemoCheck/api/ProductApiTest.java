@@ -480,17 +480,16 @@ public class ProductApiTest {
     @Test
     void testUpdateProduct_ValidPut() throws Exception {
         String json = """
-            {
-                "productCode": "S10_9999",
-                "productName": "Updated Name",
-                "productLine": "/productLines/Jets",
-                "productVendor": "Updated Vendor",
-                "productScale": "1:24",
-                "productDescription": "Updated Desc",
-                "quantityInStock": 50,
-                "buyPrice": 200.0,
-                "MSRP": 300.0
-            }
+        {
+            "productName": "Updated Name",
+            "productLine": "/productLines/Jets",
+            "productVendor": "Updated Vendor",
+            "productScale": "1:24",
+            "productDescription": "Updated Desc",
+            "quantityInStock": 50,
+            "buyPrice": 200.0,
+            "MSRP": 300.0
+        }
         """;
 
         mockMvc.perform(put("/products/S10_9999")
