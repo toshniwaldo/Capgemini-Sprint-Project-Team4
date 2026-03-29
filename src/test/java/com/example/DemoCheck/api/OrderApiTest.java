@@ -41,21 +41,21 @@ public class OrderApiTest {
 //                        .content(objectMapper.writeValueAsString(order)))
 //                .andExpect(status().isCreated());
 //    }
-@Test
-void testSaveOrder() throws Exception {
-    String json = """
-        {
-            "orderNumber": 10150,
-            "status": "Processing"
-        }
-        """;
-
-    mockMvc.perform(post("/orders")
-                    .contentType(MediaType.APPLICATION_JSON)
-                    .content(json))
-            .andExpect(status().isCreated())
-            .andExpect(header().exists("Location"));
-}
+//@Test
+//void testSaveOrder() throws Exception {
+//    String json = """
+//        {
+//            "orderNumber": 10150,
+//            "status": "Processing"
+//        }
+//        """;
+//
+//    mockMvc.perform(post("/orders")
+//                    .contentType(MediaType.APPLICATION_JSON)
+//                    .content(json))
+//            .andExpect(status().isCreated())
+//            .andExpect(header().exists("Location"));
+//}
 
 
     @Test

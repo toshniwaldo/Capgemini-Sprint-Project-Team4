@@ -1,6 +1,9 @@
 package com.example.DemoCheck.entity;
 
+<<<<<<< HEAD
+=======
 import com.fasterxml.jackson.annotation.JsonIgnore;
+>>>>>>> 49cf1e97fc93a103609bfab5ac4993d835364c83
 import jakarta.persistence.*;
 import lombok.*;
 

@@ -21,6 +21,8 @@ public class ProductLine {
     @Column(name = "image", columnDefinition = "MEDIUMBLOB")
     private byte[] image;
 
+
+
     public ProductLine() {
     }
 
