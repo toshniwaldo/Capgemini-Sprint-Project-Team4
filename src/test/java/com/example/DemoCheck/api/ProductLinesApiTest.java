@@ -206,7 +206,7 @@ public class ProductLinesApiTest {
                         .put("/productlines/{id}", "DoesNotExist")
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNoContent());
+                .andExpect(status().isCreated());
     }
 
 
