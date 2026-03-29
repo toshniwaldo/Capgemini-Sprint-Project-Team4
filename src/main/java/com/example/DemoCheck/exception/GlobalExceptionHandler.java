@@ -5,10 +5,12 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.ConstraintViolationException;
 import org.springframework.core.convert.ConversionFailedException;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -16,34 +18,44 @@ import java.util.stream.Collectors;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
-    //Invalid ID format
-    @ExceptionHandler(ConversionFailedException.class)
-    public ResponseEntity<ErrorResponse> handleConversionFailed(
-            ConversionFailedException ex,
-            HttpServletRequest request) {
+        @ExceptionHandler(MethodArgumentNotValidException.class)
+        public ResponseEntity<String> handleValidation(Exception ex) {
+                return ResponseEntity.badRequest().body("Validation failed");
+        }
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
-                "Invalid ID format. ID must be a number.",
-                request.getRequestURI(),
-                LocalDateTime.now()
-        );
+        @ExceptionHandler(DataIntegrityViolationException.class)
+        public ResponseEntity<String> handleDBException(Exception ex) {
+                return ResponseEntity
+                                .badRequest()
+                                .body("Invalid data: Required fields missing");
+        }
+
+        // Invalid ID format
+        @ExceptionHandler(ConversionFailedException.class)
+        public ResponseEntity<ErrorResponse> handleConversionFailed(
+                        ConversionFailedException ex,
+                        HttpServletRequest request) {
+
+                ErrorResponse error = new ErrorResponse(
+                                HttpStatus.BAD_REQUEST.value(),
+                                "Invalid ID format. ID must be a number.",
+                                request.getRequestURI(),
+                                LocalDateTime.now());
 
          return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
-    //Customer not found (valid ID but not present)
-    @ExceptionHandler(ResourceNotFoundException.class)
-    public ResponseEntity<ErrorResponse> handleNotFound(
-            ResourceNotFoundException ex,
-            HttpServletRequest request) {
+        // Customer not found (valid ID but not present)
+        @ExceptionHandler(ResourceNotFoundException.class)
+        public ResponseEntity<ErrorResponse> handleNotFound(
+                        ResourceNotFoundException ex,
+                        HttpServletRequest request) {
 
-        ErrorResponse error = new ErrorResponse(
-                HttpStatus.NOT_FOUND.value(),
-                "Customer not found",
-                request.getRequestURI(),
-                LocalDateTime.now()
-        );
+                ErrorResponse error = new ErrorResponse(
+                                HttpStatus.NOT_FOUND.value(),
+                                "Customer not found",
+                                request.getRequestURI(),
+                                LocalDateTime.now());
 
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(error);
     }
@@ -119,7 +131,7 @@ public class GlobalExceptionHandler {
 
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.INTERNAL_SERVER_ERROR.value(),
-                "Something went wrong",
+                ex.getMessage(),
                 request.getRequestURI(),
                 LocalDateTime.now()
         );

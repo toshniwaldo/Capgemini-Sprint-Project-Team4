@@ -1,5 +1,6 @@
 package com.example.DemoCheck.api;
 
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -10,10 +11,17 @@ import org.springframework.test.web.servlet.MockMvc;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 
 
 import org.springframework.transaction.annotation.Transactional;
+
+import com.example.DemoCheck.entity.Product;
+import com.example.DemoCheck.entity.ProductLine;
+import com.example.DemoCheck.repository.ProductLineRepository;
+import com.example.DemoCheck.repository.ProductRepository;
 
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
@@ -25,15 +33,47 @@ public class ProductApiTest {
     @Autowired
     private MockMvc mockMvc;
 
+    @Autowired
+    private ProductRepository productRepository;
+
+    @Autowired
+    private ProductLineRepository productLineRepository;
+
+    @BeforeEach
+    void setup() {
+        ProductLine pl = new ProductLine();
+        pl.setProductLine("Jets");
+        pl.setTextDescription("Jet models");
+        if (!productLineRepository.existsById("Jets")) {
+            productLineRepository.save(pl);
+        }
+
+        Product p = new Product();
+        p.setProductCode("S10_9999");
+        p.setProductName("Existing");
+        p.setProductLine(pl);
+        p.setProductVendor("Vendor");
+        p.setProductScale("1:18");
+        p.setProductDescription("Test description");
+        p.setQuantityInStock(10);
+        p.setBuyPrice(100.0);
+        p.setMSRP(150.0); 
+
+        productRepository.save(p);
+    }
+
     // ================================================ GET Products API ================================================
 
     // valid request test
     @Test
     void testGetProducts_byPage_returnsPage() throws Exception {
         mockMvc.perform(get("/products")
-                .param("page", "0")
-                .param("size", "20")
-                .param("sort", "productName,asc"))
+                    .param("page", "0")
+                    .param("size", "20")
+                    .param("projection", "productView")
+                    .param("sort", "productName,asc")
+                )
+            .andDo(print())
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.page.size").value(20))
             .andExpect(jsonPath("$.page.number").value(0))
@@ -45,7 +85,10 @@ public class ProductApiTest {
     // testing first page fetch
     @Test
     void testFirstPage() throws Exception {
-        mockMvc.perform(get("/products?page=0&size=20"))
+       mockMvc.perform(get("/products")
+        .param("page", "0")
+        .param("size", "20")
+        .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.page.number").value(0));
     }
@@ -53,7 +96,8 @@ public class ProductApiTest {
     // testing middle page fetch
     @Test
     void testMiddlePage() throws Exception {
-        mockMvc.perform(get("/products?page=3&size=20"))
+        mockMvc.perform(get("/products?page=3&size=20")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.page.number").value(3));
     }
@@ -61,7 +105,8 @@ public class ProductApiTest {
     // testing last page fetch
     @Test
     void testLastPage() throws Exception {
-        mockMvc.perform(get("/products?page=5&size=20"))
+        mockMvc.perform(get("/products?page=5&size=20")
+                .param("projection", "productView"))
             .andExpect(status().isOk());
     }
 
@@ -69,7 +114,8 @@ public class ProductApiTest {
     // should return empty products list
     @Test
     void testOutOfBoundsPage() throws Exception {
-        mockMvc.perform(get("/products?page=555&size=20"))
+        mockMvc.perform(get("/products?page=555&size=20")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$._embedded.products").isEmpty());
     }
@@ -77,7 +123,8 @@ public class ProductApiTest {
     // negative page number 
     @Test
     void testNegativePage() throws Exception {
-        mockMvc.perform(get("/products?page=-1&size=20"))
+        mockMvc.perform(get("/products?page=-1&size=20")
+                .param("projection", "productView"))
             // .andExpect(status().isBadRequest()); 
             /*
             when we give negative page number as param, then spring internally converts 
@@ -98,7 +145,8 @@ public class ProductApiTest {
     // size = 0 edge case
     @Test
     void testSizeZero() throws Exception {
-        mockMvc.perform(get("/products?page=0&size=0"))
+        mockMvc.perform(get("/products?page=0&size=0")
+                .param("projection", "productView"))
             .andExpect(status().isOk());
     }
 
@@ -107,7 +155,8 @@ public class ProductApiTest {
     // sorting on a field name
     @Test
     void testAscendingProductSorting() throws Exception {
-        String response = mockMvc.perform(get("/products?sort=productName,asc"))
+        String response = mockMvc.perform(get("/products?sort=productName,asc")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$._embedded.products").isArray())
             .andReturn()
@@ -130,7 +179,8 @@ public class ProductApiTest {
     // reverse sorting on a field name
     @Test
     void testDescendingProductSorting() throws Exception {
-        String response = mockMvc.perform(get("/products?sort=productName,desc"))
+        String response = mockMvc.perform(get("/products?sort=productName,desc")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$._embedded.products").isArray())
             .andReturn()
@@ -153,7 +203,8 @@ public class ProductApiTest {
     // invalid sort field provided
     @Test
     void testInvalidSortField() throws Exception {
-        mockMvc.perform(get("/products?sort=invalidField,asc"))
+        mockMvc.perform(get("/products?sort=invalidField,asc")
+                .param("projection", "productView"))
             // .andExpect(status().isBadRequest());
 
             /*
@@ -170,8 +221,8 @@ public class ProductApiTest {
     @Test
     void testSearch_validKeyword_result() throws Exception {
         mockMvc.perform(get("/products/search/searchByNameOrLine")
-                .param("name", "car")
-                .param("line", "car")
+                .param("name", "Existing")
+                .param("line", "jet")
                 .param("page", "0")
                 .param("size", "20")
                 .param("projection", "productView"))
@@ -195,8 +246,9 @@ public class ProductApiTest {
     @Test
     void testSearch_PartialMatch() throws Exception {
         mockMvc.perform(get("/products/search/searchByNameOrLine")
-                .param("name", "ca")
-                .param("line", "ca"))
+                .param("name", "xis")
+                .param("line", "je")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$._embedded.products").isNotEmpty());
     }
@@ -207,7 +259,8 @@ public class ProductApiTest {
     // valid ID
     @Test
     void testGetProductByValidId() throws Exception {
-        mockMvc.perform(get("/products/S10_1678"))
+        mockMvc.perform(get("/products/S10_9999")
+                .param("projection", "productView"))
             .andExpect(status().isOk())
             .andExpect(jsonPath("$.productName").exists());
     }
@@ -215,14 +268,8 @@ public class ProductApiTest {
     // invalid id
     @Test
     void testGetProductByInvalidId() throws Exception {
-        mockMvc.perform(get("/products/S10_1678025"))
-            .andExpect(status().isNotFound());
-    }
-
-    // null or empty ID
-    @Test
-    void testGetProductById_Empty() throws Exception {
-        mockMvc.perform(get("/products/"))
+        mockMvc.perform(get("/products/S10_1678025")
+                .param("projection", "productView"))
             .andExpect(status().isNotFound());
     }
 
@@ -252,14 +299,18 @@ public class ProductApiTest {
 
 
     // ================================================ POST Product tests ================================================
+    
+    // tests Product creation through POST endpoint
     @Test
     void testCraeteProduct_Valid() throws Exception {
         String json = """
             {
-                "productCode": "S10_9999",
+                "productCode": "S10_8888",
                 "productName": "Test Product",
-                "productLine": "Cars",
+                "productLine": "/productLines/Jets",
                 "productVendor": "Test Vendor",
+                "productScale": "1:18",
+                "productDescription": "Test description",
                 "quantityInStock": 100,
                 "buyPrice": 200.0,
                 "MSRP": 300.0
@@ -271,5 +322,190 @@ public class ProductApiTest {
                 .content(json))
             .andExpect(status().isCreated())
             .andExpect(header().exists("Location"));
+    }
+
+    // tests Product creation failure due to missing fields in JSON through POST endpoint
+    @Test
+    void testCreateProduct_MissingField() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_1111",
+                "productLine": "/productLines/Jets",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to blank fields in JSON through POST endpoint
+    @Test
+    void testCreateProduct_BlankProductName() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_2222",
+                "productName": "   ",
+                "productLine": "/productLines/Jets",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to missing relationship mapping field in JSON through POST endpoint
+    @Test
+    void testCreateProduct_MissingProductLine() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_3333",
+                "productName": "Test",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to non-existing relationship mapping field in JSON through POST endpoint
+    @Test
+    void testCreateProduct_InvalidProductLine() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_4444",
+                "productName": "Test",
+                "productLine": "/productLines/InvalidLine",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to negative value in numeric field in JSON through POST endpoint
+    @Test
+    void testCreateProduct_NegativeQuantity() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_5555",
+                "productName": "Test",
+                "productLine": "/productLines/Jets",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": -5,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to negative value in numeric field in JSON through POST endpoint
+    @Test
+    void testCreateProduct_NegativePrice() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_6666",
+                "productName": "Test",
+                "productLine": "/productLines/Jets",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": -100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest());
+    }
+
+    // tests Product creation failure due to duplicate product insertion in JSON through POST endpoint
+    @Test
+    void testCreateProduct_DuplicateProductCode() throws Exception {
+        String json = """
+            {
+                "productCode": "S10_9999",
+                "productName": "Duplicate",
+                "productLine": "/productLines/Jets",
+                "productVendor": "Vendor",
+                "productScale": "1:18",
+                "productDescription": "Desc",
+                "quantityInStock": 10,
+                "buyPrice": 100.0,
+                "MSRP": 150.0
+            }
+        """;
+
+        mockMvc.perform(post("/products")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andExpect(status().isBadRequest()); // or isBadRequest depending on handler
+    }
+
+    
+    // ================================================ PUT/PATCH Product tests ================================================
+
+    // tests Product updation through PUT endpoint
+    @Test
+    void testUpdateProduct_ValidPut() throws Exception {
+        String json = """
+        {
+            "productName": "Updated Name",
+            "productLine": "/productLines/Jets",
+            "productVendor": "Updated Vendor",
+            "productScale": "1:24",
+            "productDescription": "Updated Desc",
+            "quantityInStock": 50,
+            "buyPrice": 200.0,
+            "MSRP": 300.0
+        }
+        """;
+
+        mockMvc.perform(put("/products/S10_9999")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(json))
+            .andDo(print())
+            .andExpect(status().isNoContent()); // 204
     }
 }

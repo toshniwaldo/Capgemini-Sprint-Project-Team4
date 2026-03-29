@@ -2,6 +2,8 @@ package com.example.DemoCheck.entity;
 
 import java.util.List;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
@@ -9,6 +11,10 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
+import jakarta.validation.constraints.DecimalMin;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 @Entity
@@ -19,31 +25,43 @@ public class Product {
     @Column(name = "productCode")
     private String productCode;
 
-    @Column(name = "productName")
+    @NotBlank
+    @Column(name = "productName", nullable = false)
     private String productName;
 
+    @NotNull
     @ManyToOne
     @JoinColumn(name = "productLine", referencedColumnName = "productLine")
     private ProductLine productLine;
 
-    @Column(name = "productVendor")
+    @NotBlank
+    @Column(name = "productVendor", nullable = false)
     private String productVendor;
 
-    @Column(name = "productScale")
+    @NotBlank
+    @Column(name = "productScale", nullable = false)
     private String productScale;
 
-    @Column(name = "productDescription")
+    @NotBlank
+    @Column(name = "productDescription", nullable = false)
     private String productDescription;
 
-    @Column(name = "quantityInStock")
-    private int quantityInStock;
+    @NotNull
+    @Min(0)
+    @Column(name = "quantityInStock", nullable = false)
+    private Integer quantityInStock;
 
-    @Column(name = "buyPrice")
+    @NotNull
+    @DecimalMin("0.0")
+    @Column(name = "buyPrice", nullable = false)
     private double buyPrice;
 
-    @Column(name = "MSRP")
+    @NotNull
+    @DecimalMin("0.0")
+    @Column(name = "MSRP", nullable = false)
     private double MSRP;
 
     @OneToMany(mappedBy = "product")
+    @JsonIgnore
     private List<OrderDetails> orderDetails;
 }

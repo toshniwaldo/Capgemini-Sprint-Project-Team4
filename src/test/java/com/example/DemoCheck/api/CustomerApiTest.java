@@ -138,7 +138,7 @@ class CustomerApiTest {
         int id = generateId();
         customerRepository.save(createCustomer(id, "ABC Corp", "Pune"));
 
-        mockMvc.perform(get("/customer"))
+        mockMvc.perform(get("/customer?sort=customerNumber,desc"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$._embedded.customers").isArray())
                 .andExpect(jsonPath("$._embedded.customers[*].customerName")
