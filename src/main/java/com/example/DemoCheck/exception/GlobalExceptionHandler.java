@@ -47,9 +47,20 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException ex,
             HttpServletRequest request) {
 
+        String path = request.getRequestURI();
+        String message;
+
+        if (path.contains("/employees")) {
+            message = "Employee not found";
+        } else if (path.contains("/customers")) {
+            message = "Customer not found";
+        } else {
+            message = "Resource not found";
+        }
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "Customer not found",
+                message,
                 request.getRequestURI(),
                 LocalDateTime.now());
 
