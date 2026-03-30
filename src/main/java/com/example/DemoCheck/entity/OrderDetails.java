@@ -20,7 +20,7 @@ public class OrderDetails {
 
     @ManyToOne
     @MapsId("orderNumber")
-    @JoinColumn(name = "orderNumber", nullable = false)
+    @JoinColumn(name = "orderNumber", nullable = false, insertable = false, updatable = false)
     private Order order;
 
     @ManyToOne

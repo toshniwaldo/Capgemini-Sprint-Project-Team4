@@ -1,6 +1,8 @@
 package com.example.DemoCheck.config;
 
 import com.example.DemoCheck.handler.ProductEventHandler;
+import com.example.DemoCheck.projection.OrderDetailProjection;
+import com.example.DemoCheck.projection.ProductProjection;
 
 import org.jspecify.annotations.NonNull;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -54,5 +56,9 @@ public class RestConfig implements RepositoryRestConfigurer {
                         .addProjection(com.example.DemoCheck.projection.EmployeeListProjection.class);
 
         config.exposeIdsFor(com.example.DemoCheck.entity.Employee.class);
+
+        config.getProjectionConfiguration().addProjection(OrderDetailProjection.class);
+
+        config.getProjectionConfiguration().addProjection(ProductProjection.class);
     }
 }
