@@ -152,6 +152,26 @@ class OfficeRestApiTest {
         assertTrue(officeRepository.existsById("T91"));
     }
 
+    @Test
+    void addOffice_shouldFail_whenCityIsBlank() throws Exception {
+        String body = """
+            {
+              "officeCode": "T99",
+              "city": "",
+              "phone": "9999999999",
+              "addressLine1": "Main Road",
+              "country": "India",
+              "postalCode": "440001",
+              "territory": "APAC"
+            }
+            """;
+
+        mockMvc.perform(post("/offices")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(body))
+                .andExpect(status().isBadRequest());
+    }
+
     //patch update pass case
     @Test
     void updatePhone_shouldUpdatePhone_whenOfficeExists() throws Exception {

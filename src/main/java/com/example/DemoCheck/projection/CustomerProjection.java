@@ -6,6 +6,7 @@ import org.springframework.data.rest.core.config.Projection;
 
 @Projection(name = "customerView", types = Customer.class)
 public interface CustomerProjection {
+    Integer getCustomerNumber();
     String getCustomerName();
 
     @Value("#{target.contactFirstName + ' ' + target.contactLastName}")

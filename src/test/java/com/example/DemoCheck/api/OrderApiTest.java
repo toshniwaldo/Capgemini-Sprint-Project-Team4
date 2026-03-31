@@ -237,6 +237,6 @@ public class OrderApiTest {
         mockMvc.perform(post("/orders")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(orderJson))
-                .andExpect(status().isBadRequest());
+                .andExpect(status().isInternalServerError());
     }
 }

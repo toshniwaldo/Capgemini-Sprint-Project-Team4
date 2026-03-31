@@ -47,4 +47,17 @@ public class Employee {
     @OneToMany(mappedBy = "salesRepEmployee")
     @JsonIgnore   // ✅ ignore customer loop
     private List<Customer> customers;
+
+    @PrePersist
+    @PreUpdate
+    private void validateManager() {
+        // If the employee has a manager, and the employee itself has an ID assigned
+        if (this.manager != null && this.employeeNumber != null) {
+
+            // Check if the IDs match
+            if (this.employeeNumber.equals(this.manager.getEmployeeNumber())) {
+                throw new IllegalStateException("JPA Rejection: An employee cannot report to themselves.");
+            }
+        }
+    }
 }

@@ -16,8 +16,7 @@ import java.nio.file.Paths;
 
 import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.hamcrest.Matchers.greaterThan;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
 
@@ -156,8 +155,7 @@ public class ProductLinesApiTest {
     }
     """;
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/productlines/{id}", "Classic Cars")
+        mockMvc.perform(put("/productlines/{id}", "Classic Cars")
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(updatedJson))
                 .andExpect(status().isNoContent());
@@ -218,8 +216,7 @@ public class ProductLinesApiTest {
 
         String invalidJson = "{ invalid json }";
 
-        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
-                        .put("/productlines/{id}", "Classic Cars")
+        mockMvc.perform(put("/productlines/{id}", "Classic Cars")
                         .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
                         .content(invalidJson))
                 .andExpect(status().isInternalServerError());

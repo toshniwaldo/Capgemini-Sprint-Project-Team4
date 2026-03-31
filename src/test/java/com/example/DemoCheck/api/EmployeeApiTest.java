@@ -1,17 +1,23 @@
 package com.example.DemoCheck.api;
 
+import com.example.DemoCheck.entity.Customer;
 import com.example.DemoCheck.entity.Employee;
 import com.example.DemoCheck.entity.Office;
+import com.example.DemoCheck.repository.CustomerRepository;
 import com.example.DemoCheck.repository.EmployeeRepository;
 import com.example.DemoCheck.repository.OfficeRepository;
-import jakarta.transaction.Transactional;
+import org.springframework.transaction.annotation.Transactional;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import org.springframework.transaction.annotation.Propagation;
 
+import java.math.BigDecimal;
+
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
@@ -29,6 +35,9 @@ public class EmployeeApiTest {
 
     @Autowired
     private OfficeRepository officeRepository;
+
+    @Autowired
+    private CustomerRepository customerRepository;
 
     // --- HELPER METHOD ---
     // This creates and saves an employee in just one line of code
@@ -63,6 +72,32 @@ public class EmployeeApiTest {
         return officeRepository.save(office);
     }
 
+    private Customer createCustomer(
+            Integer id,
+            String name,
+            String firstName,
+            String lastName,
+            String phone,
+            String city,
+            Employee salesRep
+    ) {
+        Customer c = new Customer();
+        c.setCustomerNumber(id);
+        c.setCustomerName(name);
+        c.setContactFirstName(firstName);
+        c.setContactLastName(lastName);
+        c.setPhone(phone);
+        c.setAddressLine1("Default Address 1");
+        c.setAddressLine2("Default Address 2");
+        c.setPostalCode("440001");
+        c.setCity(city);
+        c.setState("MH");
+        c.setCountry("India");
+        c.setCreditLimit(new BigDecimal("50000"));
+        c.setSalesRepEmployee(salesRep);
+
+        return customerRepository.save(c);
+    }
 //    @Test
 //    void testOfficeCreated() {
 //        Office office = getDefaultOffice();
@@ -72,16 +107,34 @@ public class EmployeeApiTest {
 
     @Test
     void testGetAllEmployees_WithPagination() throws Exception {
-        createTestEmployee(9999, "Atharva", "Bomle", "atharva@gmail.com", "Developer", null,getDefaultOffice());
 
+        // Arrange: create multiple employees
+        for (int i = 0; i < 10; i++) {
+            createTestEmployee(9000 + i, "Emp" + i, "Test",
+                    "emp" + i + "@gmail.com", "Developer",
+                    null, getDefaultOffice());
+        }
+
+        // Act + Assert
         mockMvc.perform(get("/employees")
                         .param("projection", "employeeView")
                         .param("page", "0")
                         .param("size", "5"))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$._embedded.employees").exists());
-    }
 
+                // ✅ Check data exists
+                .andExpect(jsonPath("$._embedded.employees").exists())
+
+                // ✅ Check ONLY 5 records returned
+                .andExpect(jsonPath("$._embedded.employees.length()").value(5))
+
+                // ✅ Check pagination metadata
+                .andExpect(jsonPath("$.page.size").value(5))
+                .andExpect(jsonPath("$.page.number").value(0))
+
+                // ✅ Total elements should be >= 10
+                .andExpect(jsonPath("$.page.totalElements").value(org.hamcrest.Matchers.greaterThanOrEqualTo(10)));
+    }
     @Test
     void getEmployeeById() throws Exception {
         createTestEmployee(9998, "John", "Doe", "john@gmail.com", "Manager", null,getDefaultOffice());
@@ -95,7 +148,8 @@ public class EmployeeApiTest {
 
     @Test
     void SearchByName_Pass() throws Exception {
-        createTestEmployee(1001, "Atharva", "Bomle", "atharva.search@gmail.com", "Developer", null,getDefaultOffice());
+        createTestEmployee(1001, "Atharva", "Bomle", "atharva.search@gmail.com",
+                "Developer", null,getDefaultOffice());
 
         mockMvc.perform(get("/employees/search/byName")
                         .param("name", "Atharva Bomle")
@@ -107,7 +161,8 @@ public class EmployeeApiTest {
 
     @Test
     void SearchByName_Fail() throws Exception {
-        createTestEmployee(1001, "Atharva", "Bomle", "atharva.search@gmail.com", "Developer", null,getDefaultOffice());
+        createTestEmployee(1001, "Atharva", "Bomle",
+                "atharva.search@gmail.com", "Developer", null,getDefaultOffice());
 
         mockMvc.perform(get("/employees/search/byName")
                         .param("name", "Dhruv Toshniwal")
@@ -118,18 +173,36 @@ public class EmployeeApiTest {
 
     @Test
     void SearchByJobTitle_Pass() throws Exception {
-        createTestEmployee(1003, "Alice", "Johnson", "alice.j@gmail.com", "Sales Manager (NA)", null,getDefaultOffice());
+        // Arrange: create multiple matching employees
+        createTestEmployee(1003, "Alice", "Johnson", "alice.j@gmail.com",
+                "Sales Manager (NA)", null, getDefaultOffice());
 
+        createTestEmployee(1004, "Bob", "Smith", "bob@gmail.com",
+                "Sales Executive", null, getDefaultOffice());
+
+        createTestEmployee(1005, "Charlie", "Brown", "charlie@gmail.com",
+                "Sales Associate", null, getDefaultOffice());
+
+        // Act + Assert
         mockMvc.perform(get("/employees/search/byJobTitle")
                         .param("jobTitle", "sales")
                         .param("projection", "employeeView")
-                        .param("page", "0")   // ✅ page number
-                        .param("size", "1"))  // ✅ page size)
+                        .param("page", "0")
+                        .param("size", "1")
+                        .param("sort", "employeeNumber,asc")) // ✅ important
                 .andExpect(status().isOk())
+
+                // ✅ data exists
                 .andExpect(jsonPath("$._embedded.employees").exists())
-                .andExpect(jsonPath("$.page.size").value(1))     // ✅ check page size
-                .andExpect(jsonPath("$.page.number").value(0))   // ✅ check page number
-                .andExpect(jsonPath("$._embedded.employees[0].jobTitle").value("Sales Manager (NA)"));
+
+                // ✅ ONLY 1 result due to pagination
+                .andExpect(jsonPath("$._embedded.employees.length()").value(1))
+
+                // ✅ pagination metadata
+                .andExpect(jsonPath("$.page.size").value(1))
+                .andExpect(jsonPath("$.page.number").value(0))
+                .andExpect(jsonPath("$.page.totalElements")
+                        .value(org.hamcrest.Matchers.greaterThanOrEqualTo(3)));
     }
 
     @Test
@@ -349,7 +422,8 @@ public class EmployeeApiTest {
     @Test
     void UpdateEmployee_JobTitle_Pass() throws Exception {
         Office office = getDefaultOffice();
-        createTestEmployee(3007, "John", "Doe", "john@test.com", "Dev", null, office);
+        createTestEmployee(3007, "John", "Doe",
+                "john@test.com", "Dev", null, office);
 
         String updateJson = """
         {
@@ -366,7 +440,8 @@ public class EmployeeApiTest {
     @Test
     void UpdateEmployee_JobTitle_Fail_Blank() throws Exception {
         Office office = getDefaultOffice();
-        createTestEmployee(3008, "John", "Doe", "john@test.com", "Dev", null, office);
+        createTestEmployee(3008, "John", "Doe",
+                "john@test.com", "Dev", null, office);
 
         String updateJson = """
         {
@@ -396,15 +471,9 @@ public class EmployeeApiTest {
 
         createTestEmployee(3009, "John", "Doe", "john@test.com", "Dev", null, office1);
 
-        String updateJson = """
-        {
-            "office": "/offices/2"
-        }
-        """;
-
         mockMvc.perform(put("/employees/3009/office")
-                        .contentType("text/uri-list")
-                        .content("/offices/2"))
+                        .contentType("text/uri-list")  // Tells the server to expect a raw web link
+                        .content("/offices/2"))        // The exact link to the new office connection
                 .andExpect(status().isNoContent());
     }
 
@@ -422,7 +491,7 @@ public class EmployeeApiTest {
         // Spring Data REST usually returns 400 or 404 for broken links
         // depending on the version. If you expect 400, ensure your
         // ExceptionHandler handles ResourceNotFoundException during binding.
-        mockMvc.perform(put("/employees/3010/offices")
+        mockMvc.perform(patch("/employees/3010/offices")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(updateJson))
                 .andExpect(status().is4xxClientError());
@@ -432,37 +501,80 @@ public class EmployeeApiTest {
     void UpdateEmployee_ReportsTo_Pass() throws Exception {
         Office office = getDefaultOffice();
 
-        createTestEmployee(4001, "Boss", "Manager", "boss@test.com", "CEO", null, office);
-        createTestEmployee(4002, "John", "Doe", "john@test.com", "Dev", null, office);
+        createTestEmployee(4001, "Boss", "Manager", "boss@test.com",
+                "CEO", null, office);
+        createTestEmployee(4002, "John", "Doe", "john@test.com",
+                "Dev", null, office);
 
-        String updateJson = """
-{
-    "reportsTo": "/employees/4001"
-}
-""";
-
-        mockMvc.perform(patch("/employees/4002")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content(updateJson))
+        mockMvc.perform(put("/employees/4002/manager")
+                        .contentType("text/uri-list")
+                        .content("/employees/4001"))
                 .andExpect(status().isNoContent());
+
+        // ✅ Verify DB
+        Employee updated = employeeRepository.findById(4002).orElseThrow();
+        assertEquals(4001, updated.getManager().getEmployeeNumber());
     }
 
     @Test
+    @Transactional(propagation = Propagation.NOT_SUPPORTED)
     void UpdateEmployee_ReportsToSelf_Fail_Invalid() throws Exception {
         Office office = getDefaultOffice();
-        createTestEmployee(4001, "Boss", "Manager", "boss@test.com", "CEO", null, office);
-        createTestEmployee(4003, "John", "Doe", "john@test.com", "Dev", null, office);
+        // Wrap the creation and testing in a try block
+        try {
+            createTestEmployee(4001, "Boss", "Manager", "boss@test.com",
+                    "CEO", null, office);
+            createTestEmployee(4003, "John", "Doe", "john@test.com",
+                    "Dev", null, office);
 
-        String updateJson = """
-        {
-            "reportsTo": "/employees/4003"
+            mockMvc.perform(put("/employees/4003/manager")
+                            .contentType("text/uri-list")
+                            .content("/employees/4003"))
+                    .andExpect(status().isInternalServerError());
+
+        } finally {
+            // The finally block ALWAYS runs, even if the test crashes or fails!
+            employeeRepository.deleteById(4003);
+            employeeRepository.deleteById(4001);
         }
-        """;
-
-        mockMvc.perform(put("/employees/4003")
-                        .contentType("text/uri-list")
-                        .content("/employees/4003"))
-                .andExpect(status().is4xxClientError());
     }
 
+    //----------------------- 3rd Page API ----------------------------//
+
+    @Test
+    void getAllCustomersAssociatedWithEmployee_Pass() throws Exception {
+        Employee e = createTestEmployee(1001, "John", "Doe", "atharva.search@gmail.com",
+                "Developer", null,getDefaultOffice());
+
+        createCustomer(1,"Atharva Bomle","A","B","9356784","Gondia",e);
+        createCustomer(2,"Dhruv Toshniwal","ram","T","93482","Nagpur",e);
+        createCustomer(3,"Prathmesh Hande","P","H","97654","Deoli",e);
+
+        mockMvc.perform(get("/customer/search/by-employee")
+                        .param("employeeNumber","1001")
+                        .param("projection","CustomerListProjection")
+                        .param("page","0")
+                        .param("size","1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$._embedded.customers.length()").value(1))
+                .andExpect(jsonPath("$.page.totalElements").value(3))
+                .andExpect(jsonPath("$._embedded.customers[0].customerName").value("Atharva Bomle"));
+
+    }
+
+    @Test
+    void getAllCustomersAssociatedWithEmployee_Fail() throws Exception {
+        Employee e = createTestEmployee(1001, "John", "Doe", "atharva.search@gmail.com",
+                "Developer", null,getDefaultOffice());
+
+        mockMvc.perform(get("/customer/search/by-employee")
+                        .param("employeeNumber","1001")
+                        .param("projection","CustomerListProjection")
+                        .param("page","0")
+                        .param("size","1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.page.totalElements").value(0))
+                .andExpect(jsonPath("$._embedded.customers").isEmpty());
+
+    }
 }

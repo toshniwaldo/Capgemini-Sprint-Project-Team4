@@ -12,7 +12,8 @@
     import com.example.DemoCheck.projection.ProductProjection;
 
     @Validated
-    @RepositoryRestResource(path = "products", excerptProjection = ProductProjection.class)
+    @RepositoryRestResource(path = "products")
+    // @RepositoryRestResource(path = "products", excerptProjection = ProductProjection.class)
     public interface ProductRepository extends JpaRepository<Product, String> {
         @RestResource(path = "searchByNameOrLine")
         Page<Product> findByProductNameContainingIgnoreCaseOrProductLine_ProductLineContainingIgnoreCase(

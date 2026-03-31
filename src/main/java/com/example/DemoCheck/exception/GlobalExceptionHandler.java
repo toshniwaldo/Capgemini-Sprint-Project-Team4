@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 
 import java.time.LocalDateTime;
 import java.util.stream.Collectors;
@@ -23,18 +24,21 @@ public class GlobalExceptionHandler {
     }
 
     // Invalid ID format
-    @ExceptionHandler(ConversionFailedException.class)
-    public ResponseEntity<ErrorResponse> handleConversionFailed(
-            ConversionFailedException ex,
+    @ExceptionHandler({
+            ConversionFailedException.class,
+            MethodArgumentTypeMismatchException.class
+    })
+    public ResponseEntity<ErrorResponse> handleInvalidId(
+            Exception ex,
             HttpServletRequest request) {
 
         ErrorResponse error = new ErrorResponse(
-                HttpStatus.BAD_REQUEST.value(),
+                400,
                 "Invalid ID format. ID must be a number.",
                 request.getRequestURI(),
                 LocalDateTime.now());
 
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
+        return ResponseEntity.badRequest().body(error);
     }
 
     // Customer not found (valid ID but not present)
@@ -43,9 +47,20 @@ public class GlobalExceptionHandler {
             ResourceNotFoundException ex,
             HttpServletRequest request) {
 
+        String path = request.getRequestURI();
+        String message;
+
+        if (path.contains("/employees")) {
+            message = "Employee not found";
+        } else if (path.contains("/customers")) {
+            message = "Customer not found";
+        } else {
+            message = "Resource not found";
+        }
+
         ErrorResponse error = new ErrorResponse(
                 HttpStatus.NOT_FOUND.value(),
-                "Customer not found",
+                message,
                 request.getRequestURI(),
                 LocalDateTime.now());
 

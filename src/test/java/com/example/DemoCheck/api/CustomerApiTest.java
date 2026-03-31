@@ -18,6 +18,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.hamcrest.Matchers.nullValue;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -530,10 +531,13 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patchJson))
-                .andExpect(status().isNoContent()); // ✅ FIX
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.customerName").value("Updated Name"))
+                .andExpect(jsonPath("$.city").value("Nagpur")); // unchanged
 
         Customer updated = customerRepository.findById(id).orElseThrow();
         assertThat(updated.getCustomerName()).isEqualTo("Updated Name");
@@ -552,10 +556,14 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNoContent()); // ✅ FIX
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.addressLine1").value("New Address"))
+                .andExpect(jsonPath("$.city").value("Pune"))
+                .andExpect(jsonPath("$.customerName").value("Address Corp")); // unchanged
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
@@ -576,10 +584,14 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNoContent()); // ✅ 204
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.contactFirstName").value("Jane"))
+                .andExpect(jsonPath("$.contactLastName").value("Doe"))
+                .andExpect(jsonPath("$.customerName").value("Contact Corp")); // unchanged
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
@@ -599,10 +611,13 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNoContent()); // ✅ 204
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.customerName").value("Trimmed Name"))
+                .andExpect(jsonPath("$.city").value("Nagpur")); // unchanged
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
@@ -622,15 +637,18 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patchJson))
-                .andExpect(status().isNoContent()); // ✅ 204
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.city").value("Mumbai"))
+                .andExpect(jsonPath("$.customerName").value("Test Corp")); // unchanged
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
         assertThat(updated.getCity()).isEqualTo("Mumbai");
-        assertThat(updated.getCustomerName()).isEqualTo("Test Corp"); // unchanged
+        assertThat(updated.getCustomerName()).isEqualTo("Test Corp");
     }
 
     @Test
@@ -647,10 +665,14 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patchJson))
-                .andExpect(status().isNoContent()); // ✅ FIX
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.customerName").value("New Corp"))
+                .andExpect(jsonPath("$.city").value("Pune"))
+                .andExpect(jsonPath("$.creditLimit").value(20000));
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
@@ -673,10 +695,13 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
-                .andExpect(status().isNoContent()); // ✅ FIX
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.addressLine2").value(org.hamcrest.Matchers.nullValue()));
+
 
         Customer updated = customerRepository.findById(id).orElseThrow();
 
@@ -696,12 +721,16 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("customerName cannot be blank"));
+
+        // 🔥 Optional strong check (VERY GOOD PRACTICE)
+        Customer unchanged = customerRepository.findById(id).orElseThrow();
+        assertThat(unchanged.getCustomerName()).isEqualTo("Test Corp");
     }
 
     @Test
@@ -717,12 +746,16 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("phone must be exactly 10 digits"));
+
+        //Ensure DB not corrupted
+        Customer unchanged = customerRepository.findById(id).orElseThrow();
+        assertThat(unchanged.getPhone()).isEqualTo("1234567890");
     }
 
     @Test
@@ -734,7 +767,7 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/abc")
+        mockMvc.perform(patch("/customer/update/abc")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
@@ -747,6 +780,7 @@ class CustomerApiTest {
 
         int id = generateId();
         Customer c = createCustomer(id, "Credit Corp", "Nagpur");
+        c.setCreditLimit(new BigDecimal("10000")); // ensure known value
         customerRepository.save(c);
 
         String json = """
@@ -755,12 +789,16 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("creditLimit cannot be negative"));
+
+        //IMPORTANT: Ensure DB not updated
+        Customer unchanged = customerRepository.findById(id).orElseThrow();
+        assertThat(unchanged.getCreditLimit()).isEqualTo(new BigDecimal("10000"));
     }
 
     @Test
@@ -772,11 +810,12 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/99999999")
+        mockMvc.perform(patch("/customer/update/99999999")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(patchJson))
                 .andExpect(status().isNotFound())
-                .andExpect(jsonPath("$.message").value("Customer not found"));
+                .andExpect(jsonPath("$.message")
+                        .value("Customer not found"));
     }
 
     @Test
@@ -786,10 +825,13 @@ class CustomerApiTest {
         Customer c = createCustomer(id, "Test Corp", "Nagpur");
         customerRepository.save(c);
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{}"))
-                .andExpect(status().isNoContent()); // ✅ FIX
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.customerNumber").value(id))
+                .andExpect(jsonPath("$.customerName").value("Test Corp"))
+                .andExpect(jsonPath("$.city").value("Nagpur"));
 
         Customer unchanged = customerRepository.findById(id).orElseThrow();
 
@@ -802,6 +844,7 @@ class CustomerApiTest {
 
         int id = generateId();
         Customer c = createCustomer(id, "Safe Corp", "Nagpur");
+        c.setPhone("1234567890"); // ensure known valid value
         customerRepository.save(c);
 
         String json = """
@@ -810,12 +853,17 @@ class CustomerApiTest {
     }
     """;
 
-        mockMvc.perform(patch("/customer/" + id)
+        mockMvc.perform(patch("/customer/update/" + id)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(json))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message")
                         .value("phone must be exactly 10 digits"));
+
+        //VERY IMPORTANT: ensure DB unchanged
+        Customer unchanged = customerRepository.findById(id).orElseThrow();
+
+        assertThat(unchanged.getPhone()).isEqualTo("1234567890");
     }
 
     @AfterEach
